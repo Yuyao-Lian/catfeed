@@ -22,9 +22,11 @@ Uses a DS1307 real time clock to keep the time, with a rechargable battery built
 #define PIN_SERVO 9
 #define LEDPIN 6
 
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(12, LEDPIN, NEO_GRB + NEO_KHZ800);
 Servo feedServo;
 Servo stirServo;
+
 int pos = 0;
 volatile boolean TurnDetected;
 volatile boolean up;
@@ -37,8 +39,8 @@ int buttonState = 0;                  // variable for reading the manual feed pu
 
 int feed1hour = 07;                   // variables for feeding times and quantity
 int feed1minute = 00;
-int feed2hour = 20;
-int feed2minute = 52;
+int feed2hour = 21;
+int feed2minute = 35;
 
 
 int feedQty = 4;
@@ -51,6 +53,7 @@ int feedReversal = 80; //a pwm rate that triggers reverse on the servo
 
 
 void setup ()  {
+   lcd.begin(16, 2);
    strip.begin();
    strip.show(); // Initialize all pixels to 'off'
    pinMode(buttonPin,INPUT_PULLUP);
@@ -60,13 +63,32 @@ void setup ()  {
 
   
 void loop ()  {  //Main program loop - most things in here!
-    static long virtualPosition=0;    // without STATIC it does not count correctly!!!
-    tmElements_t tm;    // This sectionm reads the time from the RTC, sets it in tmElements tm (nice to work with), then displays it.
     pinMode(buttonPin,INPUT_PULLUP);
     strip.show();
-RTC.read(tm); 
-//
- Serial.print("Ok, Time = ");
+    static long virtualPosition=0;    // without STATIC it does not count correctly!!!
+    tmElements_t tm;    // This sectionm reads the time from the RTC, sets it in tmElements tm (nice to work with), then displays it.
+    RTC.read(tm); 
+    lcd.setCursor(0, 0);
+    printDigits(tm.Hour); //call to print digit function that adds leading zeros that may be missing
+    lcd.print(":");
+    printDigits(tm.Minute);
+    lcd.print(":");
+    printDigits(tm.Second);
+    lcd.print("  ");
+    lcd.print("Qty ");
+    lcd.print(feedQty);
+    lcd.print(" ");
+    lcd.setCursor(0,1);
+    lcd.print("1)");
+    printDigits(feed1hour);
+    lcd.print(":");
+    printDigits(feed1minute);
+    lcd.print(" 2)");
+    printDigits(feed2hour);
+    lcd.print(":");
+    printDigits(feed2minute);
+    
+    Serial.print("Ok, Time = ");
     print2digits(tm.Hour);
     Serial.write(':');
     print2digits(tm.Minute);
@@ -79,25 +101,34 @@ RTC.read(tm);
     Serial.write('/');
     Serial.print(tmYearToCalendar(tm.Year));
     Serial.println();
-//
+
+
 
    // CHECK FOR MANUAL FEED BUTTON
   buttonState = digitalRead(buttonPin);
   if (buttonState == HIGH) {
     Serial.println("manual");
     lightup();
+    meow();
     feed();
-
+    redisplaytime();
   }
-  // CHECK FEEDING TIME AND FEED IF MATCHED
+
   
+  // CHECK FEEDING TIME AND FEED IF MATCHED
   if (tm.Hour == feed1hour && tm.Minute == feed1minute && tm.Second == 0)  {  // if I dont' check seconds are zero
     Serial.println("time1");
-    feed();                                                                   // then it'll feed continuously for 1 minute!
+    lightup();
+    meow();
+    feed();                                                                   
+    redisplaytime();
       }
   if (tm.Hour == feed2hour && tm.Minute == feed2minute && tm.Second == 0)  {
     Serial.println("time2");
+    lightup();
+    meow();
     feed();
+    redisplaytime();
       }  
   
 }   // End of main Loop
@@ -128,6 +159,8 @@ void feed() {
          }
              }
 
+
+
 void print2digits(int number) {
   if (number >= 0 && number < 10) {
     Serial.write('0');
@@ -137,30 +170,17 @@ void print2digits(int number) {
 
 
 void lightup(){
-  colorWipe(strip.Color(255, 0, 0), 50); // Red
-  colorWipe(strip.Color(0, 255, 0), 50); // Green
-  colorWipe(strip.Color(0, 0, 255), 50); // Blue
-  colorWipe(strip.Color(0, 0, 0, 255), 50); // White RGBW
+
   theaterChase(strip.Color(127, 127, 127), 50); // White
   theaterChase(strip.Color(127, 0, 0), 50); // Red
-  theaterChase(strip.Color(0, 255, 0), 50); // Green
+  theaterChase(strip.Color(0, 0, 255), 50); // Blue
+  colorWipe(strip.Color(127, 127, 127), 50); // White RGBW
+  colorWipe(strip.Color(255, 0, 0), 50); // Red
   colorWipe(strip.Color(0, 255, 0), 50); // Green
   for (uint16_t i=0; i < strip.numPixels(); i=i+1) {
         strip.setPixelColor(i, 0,0,0,0);     
   }
 }
-
-void rainbow(uint8_t wait) {
-  uint16_t i, j;
-  for(j=0; j<256; j++) {
-    for(i=0; i<strip.numPixels(); i++) {
-      strip.setPixelColor(i, Wheel((i+j) & 255));
-    }
-    strip.show();
-    delay(wait);
-  }
-}
-
 
 
 // Fill the dots one after the other with a color
@@ -172,19 +192,6 @@ void colorWipe(uint32_t c, uint8_t wait) {
   }
 }
 
-
-// Slightly different, this makes the rainbow equally distributed throughout
-void rainbowCycle(uint8_t wait) {
-  uint16_t i, j;
-
-  for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
-    for(i=0; i< strip.numPixels(); i++) {
-      strip.setPixelColor(i, Wheel(((i * 256 / strip.numPixels()) + j) & 255));
-    }
-    strip.show();
-    delay(wait);
-  }
-}
 
 
 //Theatre-style crawling lights.
@@ -222,21 +229,51 @@ uint32_t Wheel(byte WheelPos) {
 }
 
 
-//Theatre-style crawling lights with rainbow effect
-void theaterChaseRainbow(uint8_t wait) {
-  for (int j=0; j < 256; j++) {     // cycle all 256 colors in the wheel
-    for (int q=0; q < 3; q++) {
-      for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
-      }
-      strip.show();
 
-      delay(wait);
+void printDigits(int digits){   // utility function for digital clock display: prints leading 0
+   if(digits < 10)
+    lcd.print('0');
+   lcd.print(digits);
+ }
 
-      for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, 0);        //turn every third pixel off
-      }
-    }
-  }
+ void meow(){
+  //Display
+   lcd.setCursor(17,0);
+   lcd.print("   Meowwwww!");
+    for (int positionCounter = 0; positionCounter < 16; positionCounter++) {
+     // scroll one position left:
+     lcd.scrollDisplayLeft(); 
+     // wait a bit:
+     delay(200);
+         }
+   delay(1000);
+ }
+
+
+         
+void redisplaytime(){
+      tmElements_t tm;    // This sectionm reads the time from the RTC, sets it in tmElements tm (nice to work with), then displays it.
+    RTC.read(tm); 
+    lcd.setCursor(0, 0);
+    printDigits(tm.Hour); //call to print digit function that adds leading zeros that may be missing
+    lcd.print(":");
+    printDigits(tm.Minute);
+    lcd.print(":");
+    printDigits(tm.Second);
+    lcd.print("  ");
+    lcd.print("Qty ");
+    lcd.print(feedQty);
+    lcd.print(" ");
+    lcd.setCursor(0,1);
+    lcd.print("1)");
+    printDigits(feed1hour);
+    lcd.print(":");
+    printDigits(feed1minute);
+    lcd.print(" 2)");
+    printDigits(feed2hour);
+    lcd.print(":");
+    printDigits(feed2minute);
 }
 
+  
+ 
