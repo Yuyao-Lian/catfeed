@@ -30,21 +30,18 @@ Servo stirServo;
 int pos = 0;
 volatile boolean TurnDetected;
 volatile boolean up;
-const int PinCLK=2;                   // Used for generating interrupts using CLK signal
-const int PinDT=3;                    // Used for reading DT signal
-const int PinSW=4;                    // Used for the push button switch of the Rotary Encoder
 const int buttonPin = 8;             // the number of the pushbutton pin for manual feed 8
 int buttonState = 0;                  // variable for reading the manual feed pushbutton status
 
 
 int feed1hour = 07;                   // variables for feeding times and quantity
-int feed1minute = 00;
-int feed2hour = 21;
-int feed2minute = 35;
+int feed1minute = 59;
+int feed2hour = 22;
+int feed2minute = 20;
 
 
 int feedQty = 4;
-int feedRate = 800;   //a pwm rate the triggers forward on the servo 75
+int feedRate = 800;   //a pwm rate the triggers forward on the servo 
 int feedReversal = 80; //a pwm rate that triggers reverse on the servo
                        // play with these numbers for your servo. Mine is a Futaba digital servo
                        // that I removed the pot from and the plastic lug, to make it continuous.
@@ -108,27 +105,29 @@ void loop ()  {  //Main program loop - most things in here!
   buttonState = digitalRead(buttonPin);
   if (buttonState == HIGH) {
     Serial.println("manual");
+       meow();
     lightup();
-    meow();
+
     feed();
-    redisplaytime();
+    lcd.begin(16,2);
   }
 
   
   // CHECK FEEDING TIME AND FEED IF MATCHED
   if (tm.Hour == feed1hour && tm.Minute == feed1minute && tm.Second == 0)  {  // if I dont' check seconds are zero
     Serial.println("time1");
+        meow();
     lightup();
-    meow();
+
     feed();                                                                   
-    redisplaytime();
+    lcd.begin(16,2);
       }
   if (tm.Hour == feed2hour && tm.Minute == feed2minute && tm.Second == 0)  {
     Serial.println("time2");
+        meow();
     lightup();
-    meow();
     feed();
-    redisplaytime();
+    lcd.begin(16,2);
       }  
   
 }   // End of main Loop
@@ -250,30 +249,5 @@ void printDigits(int digits){   // utility function for digital clock display: p
  }
 
 
-         
-void redisplaytime(){
-      tmElements_t tm;    // This sectionm reads the time from the RTC, sets it in tmElements tm (nice to work with), then displays it.
-    RTC.read(tm); 
-    lcd.setCursor(0, 0);
-    printDigits(tm.Hour); //call to print digit function that adds leading zeros that may be missing
-    lcd.print(":");
-    printDigits(tm.Minute);
-    lcd.print(":");
-    printDigits(tm.Second);
-    lcd.print("  ");
-    lcd.print("Qty ");
-    lcd.print(feedQty);
-    lcd.print(" ");
-    lcd.setCursor(0,1);
-    lcd.print("1)");
-    printDigits(feed1hour);
-    lcd.print(":");
-    printDigits(feed1minute);
-    lcd.print(" 2)");
-    printDigits(feed2hour);
-    lcd.print(":");
-    printDigits(feed2minute);
-}
 
-  
  
