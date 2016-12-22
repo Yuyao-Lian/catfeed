@@ -32,14 +32,18 @@ SERVO(feed):
 
 Pushbutton:
 
-COM      GND
-NC       8
+COM      GND  (white-orange)
+NC       8    (yellow)
 
 ===============================
 LED:
 
 6
 
+
+orange=DI=pin6
+red=5V
+yellow = GND 
 ===============================
 LCD Screen:
 
@@ -50,21 +54,22 @@ LCD Screen:
 11
 12
 
+
   The circuit:
- * LCD RS pin to digital pin 12
- * LCD E      to digital pin 11
- * LCD D4 pin to digital pin 5
- * LCD D5 pin to digital pin 4
- * LCD D6 pin to digital pin 3
- * LCD D7 pin to digital pin 2
+black * LCD VSS pin to ground
+brown * LCD VDD pin to 5V
+red-purple * LCD V0 to pot output
+orange * LCD RS pin to digital pin 12
+yellow * LCD R/W pin to ground
+green * LCD E      to digital pin 11
 
- * LCD R/W pin to ground
- * LCD VSS pin to ground
- * LCD VDD pin to 5V
 
- * LCD V0 to pot output
- * LCD A to 220ohm to 5V
- * LCD K to fround
+blue * LCD D4 pin to digital pin 5
+pink * LCD D5 pin to digital pin 4
+grey * LCD D6 pin to digital pin 3
+white-green * LCD D7 pin to digital pin 2
+black-blue * LCD A to 220ohm to 5V
+brown * LCD K to fround
 
 
 

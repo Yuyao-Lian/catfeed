@@ -33,7 +33,7 @@ Servo feedServo;
 int pos = 0;
 volatile boolean TurnDetected;
 volatile boolean up;
-const int buttonPin = 8;    // the number of the pushbutton pin for manual feed 8
+const int pushbuttonPin = 8;    // the number of the pushbutton pin for manual feed 8
 int buttonState = 0;        // variable for reading the manual feed pushbutton status
 
 //Set feed time and Qty.
@@ -42,8 +42,8 @@ int feed1minute = 59;
 int feed2hour = 22;
 int feed2minute = 20;
 int feedQty = 4;
-int feedRate = 800;    //a pwm rate the triggers forward on the servo 
-int feedReversal = 80; //a pwm rate that triggers reverse on the servo
+int feedRate = 130;    //a pwm rate the triggers forward on the servo 
+int feedReversal = 40; //a pwm rate that triggers reverse on the servo
 
 //----------------------------------------------------------------------------------
 
@@ -51,14 +51,14 @@ void setup ()  {
    lcd.begin(16, 2);
    strip.begin();
    strip.show(); // Initialize all pixels to 'off'
-   pinMode(buttonPin,INPUT_PULLUP);
-   // Serial.begin(9600);
+   pinMode(pushbuttonPin,INPUT_PULLUP);
+    Serial.begin(9600);
 }
 
 //----------------------------------------------------------------------------------
 // Main function
 void loop ()  {  
-    pinMode(buttonPin,INPUT_PULLUP);
+    pinMode(pushbuttonPin,INPUT_PULLUP);
     strip.show();
     static long virtualPosition=0;    // without STATIC it does not count correctly!!!
     tmElements_t tm;    // This sectionm reads the time from the RTC, sets it in tmElements tm (nice to work with), then displays it.
@@ -84,24 +84,22 @@ void loop ()  {
     printDigits(feed2minute);
     
 // Used for debugging.
-    // Serial.print("Ok, Time = ");
-    // print2digits(tm.Hour);
-    // Serial.write(':');
-    // print2digits(tm.Minute);
-    // Serial.write(':');
-    // print2digits(tm.Second);
-    // Serial.print(", Date (D/M/Y) = ");
-    // Serial.print(tm.Day);
-    // Serial.write('/');
-    // Serial.print(tm.Month);
-    // Serial.write('/');
-    // Serial.print(tmYearToCalendar(tm.Year));
-    // Serial.println();
-
-
+     Serial.print("Ok, Time = ");
+     print2digits(tm.Hour);
+     Serial.write(':');
+     print2digits(tm.Minute);
+     Serial.write(':');
+     print2digits(tm.Second);
+     Serial.print(", Date (D/M/Y) = ");
+     Serial.print(tm.Day);
+     Serial.write('/');
+     Serial.print(tm.Month);
+     Serial.write('/');
+     Serial.print(tmYearToCalendar(tm.Year));
+    Serial.println();
 
    // CHECK FOR MANUAL FEED BUTTON
-  buttonState = digitalRead(buttonPin);
+  buttonState = digitalRead(pushbuttonPin);
   if (buttonState == HIGH) {
     // Serial.println("manual");
     meow();
@@ -110,7 +108,6 @@ void loop ()  {
     lcd.begin(16,2); // Refresh the LCD screen, other wise will be stuck at meow.
   }
 
-  
   // CHECK FEEDING TIME AND FEED IF MATCHED
   if (tm.Hour == feed1hour && tm.Minute == feed1minute && tm.Second == 0)  {  // if I dont' check seconds are zero
     // Serial.println("time1");
@@ -118,35 +115,32 @@ void loop ()  {
     lightup();
     feed();                                                                   
     lcd.begin(16,2);
-      }
+  }
   if (tm.Hour == feed2hour && tm.Minute == feed2minute && tm.Second == 0)  {
     // Serial.println("time2");
     meow();
     lightup();
     feed();
     lcd.begin(16,2);
-      }  
-  
+  }  
 }   // End of main Loop
 
 
 //======================UTILITY FUNCTIONS BELOW==================================
-
 void feed() {
 // rotate the Auger   
-   feedServo.attach(PIN_SERVO);
-    for (int cnt = 0; cnt < feedQty; cnt++)
-    {
-      feedServo.write(feedRate);  //the feedrate is really the feed direction and rate.
-      delay(600);   //this delay sets how long the servo stays running from the previous command
-      feedServo.write(feedReversal);  //...until this command sets the servo a new task!
-      delay(200);
-      feedServo.write(feedRate);  
-      delay(600);   
-      feedServo.write(feedReversal);  // if you want to increase the overall feedrate increase the forward delays (1000 at the moment)
-      delay(200);                     // or better still just copy and past the forward & backwards code underneath to repeat
-          }                           // that way the little reverse wiggle is always there to prevent jams
-     feedServo.detach();
+  feedServo.attach(PIN_SERVO);
+  for (int cnt = 0; cnt < feedQty; cnt++){
+    feedServo.write(feedRate);  //the feedrate is really the feed direction and rate.
+    delay(1000);   //this delay sets how long the servo stays running from the previous command
+    feedServo.write(feedReversal);  //...until this command sets the servo a new task!
+    delay(300);
+    feedServo.write(feedRate);  
+    delay(1000);   
+    feedServo.write(feedReversal);  // if you want to increase the overall feedrate increase the forward delays (1000 at the moment)
+    delay(300);                     // or better still just copy and past the forward & backwards code underneath to repeat
+  }                           // that way the little reverse wiggle is always there to prevent jams
+  feedServo.detach();
 }
 //-------------------
 void print2digits(int number) {
@@ -185,9 +179,7 @@ void theaterChase(uint32_t c, uint8_t wait) {
         strip.setPixelColor(i+q, c);    //turn every third pixel on
       }
       strip.show();
-
       delay(wait);
-
       for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
         strip.setPixelColor(i+q, 0);        //turn every third pixel off
       }
