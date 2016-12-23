@@ -38,12 +38,14 @@ int buttonState = 0;        // variable for reading the manual feed pushbutton s
 
 //Set feed time and Qty.
 int feed1hour = 07;         // variables for feeding times and quantity
-int feed1minute = 59;
-int feed2hour = 22;
-int feed2minute = 20;
+int feed1minute = 30;
+int feed2hour = 13;
+int feed2minute = 30;
+int feed3hour = 22;
+int feed3minute = 30;
 int feedQty = 4;
-int feedRate = 130;    //a pwm rate the triggers forward on the servo 
-int feedReversal = 40; //a pwm rate that triggers reverse on the servo
+int feedRate = 120;    //a pwm rate the triggers forward on the servo 
+int feedReversal = 20; //a pwm rate that triggers reverse on the servo
 
 //----------------------------------------------------------------------------------
 
@@ -52,7 +54,7 @@ void setup ()  {
    strip.begin();
    strip.show(); // Initialize all pixels to 'off'
    pinMode(pushbuttonPin,INPUT_PULLUP);
-    Serial.begin(9600);
+//    Serial.begin(9600);
 }
 
 //----------------------------------------------------------------------------------
@@ -70,33 +72,32 @@ void loop ()  {
     lcd.print(":");
     printDigits(tm.Second);
     lcd.print("  ");
-    lcd.print("Qty ");
-    lcd.print(feedQty);
+    lcd.print("*RORO*");
     lcd.print(" ");
     lcd.setCursor(0,1);
-    lcd.print("1)");
+    lcd.print(" ");
     printDigits(feed1hour);
-    lcd.print(":");
     printDigits(feed1minute);
-    lcd.print(" 2)");
+    lcd.print(" ");
     printDigits(feed2hour);
-    lcd.print(":");
     printDigits(feed2minute);
-    
+    lcd.print(" ");
+    printDigits(feed3hour);
+    printDigits(feed3minute);    
 // Used for debugging.
-     Serial.print("Ok, Time = ");
-     print2digits(tm.Hour);
-     Serial.write(':');
-     print2digits(tm.Minute);
-     Serial.write(':');
-     print2digits(tm.Second);
-     Serial.print(", Date (D/M/Y) = ");
-     Serial.print(tm.Day);
-     Serial.write('/');
-     Serial.print(tm.Month);
-     Serial.write('/');
-     Serial.print(tmYearToCalendar(tm.Year));
-    Serial.println();
+//     Serial.print("Ok, Time = ");
+//     print2digits(tm.Hour);
+//     Serial.write(':');
+//     print2digits(tm.Minute);
+//     Serial.write(':');
+//     print2digits(tm.Second);
+//     Serial.print(", Date (D/M/Y) = ");
+//     Serial.print(tm.Day);
+//     Serial.write('/');
+//     Serial.print(tm.Month);
+//     Serial.write('/');
+//     Serial.print(tmYearToCalendar(tm.Year));
+//    Serial.println();
 
    // CHECK FOR MANUAL FEED BUTTON
   buttonState = digitalRead(pushbuttonPin);
@@ -122,6 +123,13 @@ void loop ()  {
     lightup();
     feed();
     lcd.begin(16,2);
+  }
+   if (tm.Hour == feed3hour && tm.Minute == feed3minute && tm.Second == 0)  {
+    // Serial.println("time2");
+    meow();
+    lightup();
+    feed();
+    lcd.begin(16,2);
   }  
 }   // End of main Loop
 
@@ -131,15 +139,26 @@ void feed() {
 // rotate the Auger   
   feedServo.attach(PIN_SERVO);
   for (int cnt = 0; cnt < feedQty; cnt++){
-    feedServo.write(feedRate);  //the feedrate is really the feed direction and rate.
-    delay(1000);   //this delay sets how long the servo stays running from the previous command
-    feedServo.write(feedReversal);  //...until this command sets the servo a new task!
+    feedServo.write(feedReversal); 
     delay(300);
     feedServo.write(feedRate);  
-    delay(1000);   
-    feedServo.write(feedReversal);  // if you want to increase the overall feedrate increase the forward delays (1000 at the moment)
-    delay(300);                     // or better still just copy and past the forward & backwards code underneath to repeat
-  }                           // that way the little reverse wiggle is always there to prevent jams
+    delay(400);   
+    
+    feedServo.write(feedReversal);  
+    delay(300);
+    feedServo.write(feedRate);  
+    delay(400);   
+    
+    feedServo.write(feedReversal); 
+    delay(300);                     
+    feedServo.write(feedRate);  
+    delay(400);   
+
+    feedServo.write(feedReversal); 
+    delay(300);                     
+    feedServo.write(feedRate);  
+    delay(400);  
+  }                         
   feedServo.detach();
 }
 //-------------------
@@ -151,9 +170,6 @@ void print2digits(int number) {
 }
 //-------------------
 void lightup(){
-  theaterChase(strip.Color(127, 127, 127), 50); // White
-  theaterChase(strip.Color(127, 0, 0), 50); // Red
-  theaterChase(strip.Color(0, 0, 255), 50); // Blue
   colorWipe(strip.Color(127, 127, 127), 50); // White RGBW
   colorWipe(strip.Color(255, 0, 0), 50); // Red
   colorWipe(strip.Color(0, 255, 0), 50); // Green
@@ -210,11 +226,11 @@ void printDigits(int digits){   // utility function for digital clock display: p
 //-------------------
  void meow(){
    lcd.setCursor(17,0);
-   lcd.print("   Meowwwww!");
+   lcd.print("   Meowwwwww!");
     for (int positionCounter = 0; positionCounter < 16; positionCounter++) {
      lcd.scrollDisplayLeft(); 
-     delay(200);
+     delay(100);
     }
-   delay(1000);
+   delay(100);
  }
 //-------------------
